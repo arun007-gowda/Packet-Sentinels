@@ -1,0 +1,179 @@
+/* Core Terminal/Matrix Theme Variables */
+:root {
+  --bg-matrix: #020c04;       /* Deep obsidian green for the background */
+  --bg-card: #06180a;         /* Slightly lighter green for sections/cards */
+  --neon-green: #20ff14;      /* Classic terminal glowing green */
+  --neon-glow: rgba(32, 255, 20, 0.25);
+  --cyber-red: #ff3333;       /* Balanced terminal alert red */
+  --red-glow: rgba(255, 51, 51, 0.4);
+  --text-muted: #62a367;      /* Soft green for labels and secondary text */
+  --font-terminal: "Courier New", Courier, monospace;
+}
+
+/* Global Reset & Base Styling */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-matrix);
+  color: var(--neon-green);
+  font-family: var(--font-terminal);
+  padding: 3rem 1.5rem;
+  font-size: 18px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.6;
+}
+
+/* Header Section */
+.header-container {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.heading {
+  margin: 0.5rem 0;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+h1.heading {
+  font-size: 2.5rem;
+  font-weight: bold;
+  text-shadow: 0 0 12px var(--neon-glow);
+}
+
+h3.heading {
+  font-size: 1.3rem;
+  color: var(--text-muted);
+}
+
+/* Cyber Form Container */
+#uploadForm {
+  background-color: var(--bg-card);
+  border: 1px solid var(--neon-green);
+  box-shadow: 0 0 15px var(--neon-glow);
+  padding: 2rem;
+  border-radius: 8px;
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  justify-content: center;
+  max-width: 650px;
+  width: 100%;
+  margin: 0 auto 3rem auto;
+  transition: all 0.3s ease;
+}
+
+#uploadForm:hover {
+  box-shadow: 0 0 25px var(--neon-glow);
+}
+
+/* Custom File Upload Styling */
+input[type="file"] {
+  padding: 0.5rem;
+  font-family: var(--font-terminal);
+  font-size: 16px;
+  color: var(--text-muted);
+  background: rgba(32, 255, 20, 0.05);
+  border: 1px dashed var(--text-muted);
+  border-radius: 4px;
+  cursor: pointer;
+  flex: 1;
+}
+
+input[type="file"]::file-selector-button {
+  background-color: transparent;
+  color: var(--neon-green);
+  border: 1px solid var(--neon-green);
+  padding: 0.4rem 1rem;
+  font-family: var(--font-terminal);
+  border-radius: 4px;
+  cursor: pointer;
+  margin-right: 1rem;
+  transition: all 0.2s ease;
+}
+
+input[type="file"]::file-selector-button:hover {
+  background-color: var(--neon-green);
+  color: var(--bg-matrix);
+  box-shadow: 0 0 10px var(--neon-glow);
+}
+
+/* Cyber Terminal Action Button */
+button {
+  background-color: var(--cyber-red);
+  color: #ffffff;
+  border: 1px solid var(--cyber-red);
+  padding: 0.6rem 1.5rem;
+  font-family: var(--font-terminal);
+  font-size: 18px;
+  font-weight: bold;
+  border-radius: 4px;
+  cursor: pointer;
+  box-shadow: 0 0 15px var(--red-glow);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+button:hover {
+  background-color: #ff5555;
+  box-shadow: 0 0 25px var(--cyber-red);
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+/* Grid Layout for Charts Dashboard */
+#charts {
+  width: 100%;
+  max-width: 1100px;
+  display: none; /* Controlled via JS */
+  grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+  gap: 2rem;
+  margin-top: 1rem;
+}
+
+.chart-card {
+  background: var(--bg-card);
+  border: 1px solid var(--neon-green);
+  box-shadow: 0 0 15px var(--neon-glow);
+  padding: 1.5rem;
+  border-radius: 8px;
+}
+
+.chart-card h2 {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  text-align: left;
+  text-transform: uppercase;
+  border-left: 3px solid var(--cyber-red);
+  padding-left: 0.5rem;
+}
+
+canvas {
+  width: 100% !important;
+  height: auto !important;
+  background: #020703;
+  padding: 0.5rem;
+  border-radius: 4px;
+}
+
+/* Responsive Fixes */
+@media (max-width: 768px) {
+  #uploadForm {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  #charts {
+    grid-template-columns: 1fr;
+  }
+}

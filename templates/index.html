@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Packet Sentinels | Network Traffic Analyzer</title>
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      /* Embedded Modern Dashboard Styles */
+      :root {
+        --bg-dark: #0f172a;
+        --bg-card: #1e293b;
+        --accent-glow: #ef4444;
+        --accent-hover: #dc2626;
+        --text-main: #f8fafc;
+        --text-muted: #94a3b8;
+        --border-color: #334155;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      body {
+        background-color: var(--bg-dark);
+        color: var(--text-main);
+        padding: 2rem;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .header-container {
+        text-align: center;
+        margin-bottom: 3rem;
+      }
+
+      h1.heading {
+        font-size: 2.5rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: var(--text-main);
+        text-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+      }
+
+      h3.sub-heading {
+        color: var(--accent-glow);
+        font-weight: 500;
+        margin-top: 0.5rem;
+        letter-spacing: 1px;
+      }
+
+      #uploadForm {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        max-width: 600px;
+        width: 100%;
+        margin-bottom: 3rem;
+        transition: border-color 0.3s ease;
+      }
+
+      #uploadForm:focus-within {
+        border-color: var(--accent-glow);
+      }
+
+      input[type="file"] {
+        flex: 1;
+        color: var(--text-muted);
+        background: rgba(255, 255, 255, 0.05);
+        padding: 0.5rem;
+        border-radius: 6px;
+        border: 1px dashed var(--border-color);
+        cursor: pointer;
+      }
+
+      input[type="file"]::file-selector-button {
+        background: var(--border-color);
+        color: var(--text-main);
+        border: none;
+        padding: 0.4rem 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-right: 1rem;
+        transition: background 0.2s ease;
+      }
+
+      input[type="file"]::file-selector-button:hover {
+        background: #475569;
+      }
+
+      button[type="submit"] {
+        background: var(--accent-glow);
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.2s ease, transform 0.1s ease;
+      }
+
+      button[type="submit"]:hover {
+        background: var(--accent-hover);
+      }
+
+      button[type="submit"]:active {
+        transform: scale(0.98);
+      }
+
+      #charts {
+        display: none;
+        width: 100%;
+        max-width: 1200px;
+        grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+        gap: 2rem;
+        opacity: 0;
+        transition: opacity 0.5s ease-in-out;
+      }
+
+      .chart-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+      }
+
+      .chart-card h2 {
+        font-size: 1.25rem;
+        color: var(--text-muted);
+        margin-bottom: 1.5rem;
+        border-left: 4px solid var(--accent-glow);
+        padding-left: 0.75rem;
+      }
+
+      /* Responsiveness for smaller screens */
+      @media (max-width: 600px) {
+        #uploadForm {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        #charts {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header-container">
+      <h1 class="heading">🛡️ Packet Sentinels</h1>
+      <h3 class="sub-heading">Network Traffic Analyzer</h3>
+    </div>
+
+    <form id="uploadForm" enctype="multipart/form-data">
+      <input type="file" name="file" accept=".csv" required />
+      <button type="submit">Analyze Traffic</button>
+    </form>
+
+    <div id="charts">
+      <div class="chart-card">
+        <h2>Top Source IPs</h2>
+        <canvas id="sourceChart"></canvas>
+      </div>
+
+      <div class="chart-card">
+        <h2>Top Protocols</h2>
+        <canvas id="protocolChart"></canvas>
+      </div>
+    </div>
+
+    <script>
+      const form = document.getElementById("uploadForm");
+      // Keep track of chart instances so we can destroy them before recreating
+      let sourceChartInstance = null;
+      let protocolChartInstance = null;
+
+      // Adjust Chart.js global defaults for a clean dark mode look
+      Chart.defaults.color = '#94a3b8';
+      Chart.defaults.borderColor = '#334155';
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const formData = new FormData(form);
+
+        try {
+          const res = await fetch("/upload", {
+            method: "POST",
+            body: formData,
+          });
+
+          // Correctly parse JSON errors structured by the updated backend optimizer
+          if (!res.ok) {
+            const errData = await res.json();
+            alert(`Error: ${errData.error || 'Something went wrong'}`);
+            return;
+          }
+
+          const data = await res.json();
+          
+          // Layout display logic using a responsive CSS Grid
+          const chartsDiv = document.getElementById("charts");
+          chartsDiv.style.display = "grid";
+          setTimeout(() => chartsDiv.style.opacity = "1", 50);
+
+          // Clear previous instances to prevent overlapping ghost charts on hover
+          if (sourceChartInstance) sourceChartInstance.destroy();
+          if (protocolChartInstance) protocolChartInstance.destroy();
+
+          // Render Source IP Chart
+          sourceChartInstance = new Chart(document.getElementById("sourceChart"), {
+            type: "bar",
+            data: {
+              labels: data.top_sources.labels,
+              datasets: [{
+                label: "Hits",
+                data: data.top_sources.counts,
+                backgroundColor: "rgba(239, 68, 68, 0.8)",
+                borderColor: "rgba(239, 68, 68, 1)",
+                borderWidth: 1,
+                borderRadius: 4
+              }],
+            },
+            options: {
+              responsive: true,
+              plugins: { legend: { display: false } }
+            }
+          });
+
+          // Render Protocol Chart
+          protocolChartInstance = new Chart(document.getElementById("protocolChart"), {
+            type: "bar",
+            data: {
+              labels: data.top_protocols.labels,
+              datasets: [{
+                label: "Hits",
+                data: data.top_protocols.counts,
+                backgroundColor: "rgba(59, 130, 246, 0.8)", // Clean blue variance for contrast
+                borderColor: "rgba(59, 130, 246, 1)",
+                borderWidth: 1,
+                borderRadius: 4
+              }],
+            },
+            options: {
+              responsive: true,
+              plugins: { legend: { display: false } }
+            }
+          });
+
+        } catch (error) {
+          alert(`Network Error: ${error.message}`);
+        }
+      });
+    </script>
+  </body>
+</html>
